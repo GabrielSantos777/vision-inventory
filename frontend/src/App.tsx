@@ -32,19 +32,15 @@ function App(){
   };
 
   return(
-    <div className="w-screen h-screen flex items-center justify-center bg-slate-900">
-    <div className="w-full max-w-2xl">
-
-      <header className="mb-10 text-center">
-        <h1 className="text-4xl font-bold text-white flex items-center justify-center gap-3">
-          <Package className="text-blue-500" /> Vision Inventory
+    <div className='min-h-screen bg-slate-50 p-8 flex flex-col items-center'>
+      <header className='mb-12 text-center'>
+        <h1 className='text-4xl font-bold text-slate-800 flex items-center justify-center gap-3'>
+          <Package className='text-blue-600'/> Vision Inventory
         </h1>
-        <p className="text-slate-400 mt-2">
-          IA para gestão inteligente de prateleiras
-        </p>
+        <p className='text-slate-500 mt-2'>IA Para Gestão Inteligente de Estoque</p>
       </header>
 
-      <main className="bg-slate-800 rounded-2xl shadow-xl p-8">
+      <main className='w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8'>
         {/* Área de Seleção de Imagem */}
         <div className='border-2 border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer relative'>
           <input type="file" className='absolute inset-0 opacity-0 cursor-pointer' onChange={(e) => setImage(e.target.files?.[0] || null)} accept='image/*'/>
@@ -73,7 +69,7 @@ function App(){
           </div>
         )}
       </main>
-      </div>
+
     </div>
   )
 
