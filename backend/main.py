@@ -13,13 +13,13 @@ load_dotenv()
 
 app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # em produção, troque por o domínio do frontend
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db_connection():
     return psycopg2.connect(
@@ -27,9 +27,8 @@ def get_db_connection():
         database=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        port=os.getenv("DB_PORT",5432)
+        port=os.getenv("DB_PORT", 5432)
     )
-
 
 model = YOLO('yolov8n.pt')
 
@@ -39,22 +38,14 @@ async def detect_objects(file: UploadFile = File(...)):
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     
     results = model(image)
-    
-    detections = []
     counts = {}
     
     for result in results:
         for box in result.boxes:
             class_id = int(box.cls[0])
             label = model.names[class_id]
-            
             counts[label] = counts.get(label, 0) + 1
-            
-            # detections.append({
-            #     "label": label,
-            #     "confidence": float(box.conf[0]),
-            #     "box": box.xyxy[0].tolist()
-            # })
+
     analysis = []
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -65,14 +56,16 @@ async def detect_objects(file: UploadFile = File(...)):
         
         if product:
             cur.execute(
-                "INSERT INTO historico_deteccoes (produto_id, quantidade_detectada) VALUES (%s, %s)", (product['id'], count)
+                "INSERT INTO historico_deteccoes (produto_id, quantidade_detectada) VALUES (%s, %s)", 
+                (product['id'], count)
             )
             
             status = "OK"
             if count < product['estoque_minimo']:
                 status = "ALERTA: Estoque Baixo!"
+            
             analysis.append({
-                "produto":product['nome_exibicao'],
+                "produto": product['nome_exibicao'],
                 "detectado": count,
                 "minimo_esperado": product['estoque_minimo'],
                 "status": status
@@ -81,15 +74,34 @@ async def detect_objects(file: UploadFile = File(...)):
     conn.commit()
     cur.close()
     conn.close()
+
+    if not analysis:
+        return {"analysis": [{"produto": "Nenhum item monitorado", "detectado": 0, "minimo_esperado": 0, "status": "Vazio"}]}
     
     return {"analysis": analysis}
-        
-    # return {
-    #     "summary": counts,
-    #     "details": detections
-    # }
+
+@app.get("/history/{product_label}")
+async def get_history(product_label: str):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Procura as últimas 10 leituras de um produto específico
+    query = """
+        SELECT h.quantidade_detectada, h.data_leitura 
+        FROM historico_deteccoes h
+        JOIN produtos_estoque p ON h.produto_id = p.id
+        WHERE p.nome_label = %s
+        ORDER BY h.data_leitura DESC
+        LIMIT 10
+    """
+    cur.execute(query, (product_label,))
+    history = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    return history[::-1]
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    
