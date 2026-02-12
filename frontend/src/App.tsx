@@ -41,7 +41,7 @@ function App(){
       </header>
 
       <main className='w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8'>
-        {/* Área de Seleção de Imagem */}
+        
         <div className='border-2 border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer relative'>
           <input type="file" className='absolute inset-0 opacity-0 cursor-pointer' onChange={(e) => setImage(e.target.files?.[0] || null)} accept='image/*'/>
           <Camera className='w-12 h-12 text-slate-400 mb-4'/>
